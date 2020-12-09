@@ -1,0 +1,24 @@
+{
+  "name": "Prizm",
+  "version": "1.0.0",
+  "description": "A 3D Coding Language akin to BrainF",
+  "main": "index.js",
+  "dependencies": {
+    "colors": "^1.4.0"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "start": "node index.js"
+  },
+  "keywords": [
+    "BrainF",
+    "NodeJS",
+    "Custom Language",
+    "Arrays",
+    "3D",
+    "Esolang",
+    "Esoteric"
+  ],
+  "author": "RayhanADev",
+  "license": "MIT"
+}
