@@ -1,43 +1,40 @@
 const fs = require('fs');
-
 const colors = require('colors/safe');
 
 let file = fs
 	.readFileSync('main.pzm', { encoding: 'utf8', flag: 'r' })
 	.split('\n');
 
+function errorLog(type, message) {
+	console.log(colors.red(`${type} Error: ${message}.`));
+	process.exit(0);
+}
+
 if (!file[0] || file[0] <= 0) {
-	console.log('No length for array.');
-	process.exit(0);
+	errorLog('Creation', 'No length for array.');
 } else if (file[0] >= 1000) {
-	console.log('Array too long.');
-	process.exit(0);
+	errorLog('Creation', 'Array too long.');
 }
 
 if (!file[1] || file[1] <= 0) {
-	console.log('No width for array.');
-	process.exit(0);
+	errorLog('Creation', 'No width for array.');
 } else if (file[1] >= 1000) {
-	console.log('Array too wide.');
-	process.exit(0);
+	errorLog('Creation', 'Array too wide.');
 }
 
 if (!file[2] || file[2] <= 0) {
-	console.log('No depth for array.');
-	process.exit(0);
+	errorLog('Creation', 'No depth for array.');
 } else if (file[1] >= 1000) {
-	console.log('Array too deep.');
-	process.exit(0);
+	errorLog('Creation', 'Array too deep.');
 }
 
 let debug = false;
-if (file[3] == 'true') {
+if (file[3].toLowerCase() == 'true') {
 	debug = true;
-} else if (file[3] == 'false') {
+} else if (file[3].toLowerCase() == 'false') {
 	debug = false;
 } else {
-	console.log('No debug settings.');
-	process.exit(0);
+	errorLog('Creation', 'No debug settings.');
 }
 
 let prism = [];
@@ -53,8 +50,10 @@ for (d = 0; d < file[2]; d++) {
 	prism[d] = plane;
 }
 
-let code = file[4].split('');
-console.log(code);
+let code = [];
+for (i = 4; i < file.length; i++) {
+	code = code.concat(file[i].split(''));
+}
 
 let flags = [];
 let pointer = 0;
@@ -67,47 +66,42 @@ for (pos = 0; pos < code.length; pos++) {
 			if (prism[pointer][selector].length > cursor + 1) {
 				cursor++;
 			} else {
-				console.log('Error: No more columns. [R]');
-				process.exit(0);
+				errorLog('Movement', 'No more columns. [R]');
 			}
 			break;
 		case 'L':
 			if (0 <= cursor - 1) {
 				cursor--;
 			} else {
-				console.log('Error: No more columns. [L]');
-				process.exit(0);
+				errorLog('Movement', 'No more columns. [L]');
 			}
 			break;
 		case 'U':
 			if (0 <= selector - 1) {
-				selector++;
+				selector--;
 			} else {
-				console.log('Error: No more rows. [U]');
-				process.exit(0);
+				errorLog('Movement', 'No more rows. [U]');
 			}
 			break;
 		case 'D':
 			if (prism[pointer].length > selector + 1) {
 				selector++;
 			} else {
-				console.log('Error: No more rows. [D]');
-				process.exit(0);
-			}
-			break;
-		case 'F':
-			if (0 <= pointer - 1) {
-				pointer--;
-			} else {
-				console.log('Error: No more planes. [F]');
-				process.exit(0);
+				errorLog('Movement', 'No more rows. [D]');
 			}
 			break;
 		case 'B':
+			if (0 <= pointer - 1) {
+				pointer--;
+			} else {
+				errorLog('Movement', 'No more planes. [B]');
+			}
+			break;
+		case 'F':
 			if (prism.length > pointer + 1) {
 				pointer++;
 			} else {
-				console.log('Error: No more planes. [B]');
+				errorLog('Movement', 'No more planes. [F]');
 				process.exit(0);
 			}
 			break;
@@ -115,32 +109,43 @@ for (pos = 0; pos < code.length; pos++) {
 			prism[pointer][selector][cursor]++;
 			break;
 		case '-':
-			prism[pointer][selector][cursor]--;
+			if (prism[pointer][selector][cursor] != 0) {
+				prism[pointer][selector][cursor]--;
+			} else {
+				errorLog('Value', 'Attempted to decrement cell below 0.');
+			}
 			break;
 		case 'O':
 			let str = String.fromCharCode(prism[pointer][selector][cursor]);
 			console.log(str);
 			break;
 		case 'P':
-			flags.push(pos);
+			if (!flags.includes([pos, pointer, selector, cursor])) {
+				flags.push([pos, pointer, selector, cursor]);
+			}
 			break;
 		case 'J':
-			if (flags[0]) {
+			if (flags[0] && prism[flags[0][1]][flags[0][2]][flags[0][3]] != 0) {
+				pos = flags[0][0];
+			} else if (
+				flags[0] &&
+				prism[flags[0][1]][flags[0][2]][flags[0][3]] == 0
+			) {
 				code[pos] = 'N';
-				pos = flags[0];
 				flags = flags.slice(1, -1);
+			} else if (!flags[0]) {
+				errorLog('Jump', 'No Jump Point.');
 			}
 			break;
 		case 'N':
 			break;
 		default:
-			console.log('Error: Unexpected character ' + code[pos] + ' in code!');
-			process.exit(0);
+			errorLog('Type', 'Unexpected character ' + code[pos] + ' in code!');
 	}
 }
 
 if (debug == true) {
-	console.log(colors.yellow('=>'));
+	console.log(colors.yellow('\n=>'));
 	let planeNum = 0;
 	prism.forEach(plane => {
 		console.log(colors.white.bold(`Plane ${planeNum + 1}:`));
